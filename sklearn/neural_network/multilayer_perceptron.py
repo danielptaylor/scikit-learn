@@ -51,7 +51,7 @@ class BaseMultilayerPerceptron(six.with_metaclass(ABCMeta, BaseEstimator)):
                  alpha, batch_size, learning_rate, learning_rate_init, power_t,
                  max_iter, loss, shuffle, random_state, tol, verbose,
                  warm_start, momentum, nesterovs_momentum, early_stopping,
-                 validation_fraction, beta_1, beta_2, epsilon):
+                 validation_fraction, beta_1, beta_2, epsilon, verbose_to):
         self.activation = activation
         self.solver = solver
         self.alpha = alpha
@@ -74,6 +74,7 @@ class BaseMultilayerPerceptron(six.with_metaclass(ABCMeta, BaseEstimator)):
         self.beta_1 = beta_1
         self.beta_2 = beta_2
         self.epsilon = epsilon
+        self.verbose_to = verbose_to
 
     def _unpack(self, packed_parameters):
         """Extract the coefficients and intercepts from packed_parameters."""
@@ -526,9 +527,14 @@ class BaseMultilayerPerceptron(six.with_metaclass(ABCMeta, BaseEstimator)):
 
                 self.t_ += n_samples
                 self.loss_curve_.append(self.loss_)
+
                 if self.verbose:
                     print("Iteration %d, loss = %.8f" % (self.n_iter_,
                                                          self.loss_))
+
+                if self.verbose_to != None:
+                    with open(self.verbose_to, "a") as iteration_log:
+                        iteration_log.write(",".join(self.n_iter_, self.loss_))
 
                 # update no_improvement_count based on training loss or
                 # validation score according to early_stopping
@@ -890,7 +896,7 @@ class MLPClassifier(BaseMultilayerPerceptron, ClassifierMixin):
                  verbose=False, warm_start=False, momentum=0.9,
                  nesterovs_momentum=True, early_stopping=False,
                  validation_fraction=0.1, beta_1=0.9, beta_2=0.999,
-                 epsilon=1e-8):
+                 epsilon=1e-8, verbose_to=None):
 
         sup = super(MLPClassifier, self)
         sup.__init__(hidden_layer_sizes=hidden_layer_sizes,
@@ -903,7 +909,8 @@ class MLPClassifier(BaseMultilayerPerceptron, ClassifierMixin):
                      nesterovs_momentum=nesterovs_momentum,
                      early_stopping=early_stopping,
                      validation_fraction=validation_fraction,
-                     beta_1=beta_1, beta_2=beta_2, epsilon=epsilon)
+                     beta_1=beta_1, beta_2=beta_2, epsilon=epsilon,
+                     verbose_to=verbose_to)
 
     def _validate_input(self, X, y, incremental):
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc', 'coo'],
@@ -1278,7 +1285,8 @@ class MLPRegressor(BaseMultilayerPerceptron, RegressorMixin):
                      nesterovs_momentum=nesterovs_momentum,
                      early_stopping=early_stopping,
                      validation_fraction=validation_fraction,
-                     beta_1=beta_1, beta_2=beta_2, epsilon=epsilon)
+                     beta_1=beta_1, beta_2=beta_2, epsilon=epsilon,
+                     verbose_to=verbose_to)
 
     def predict(self, X):
         """Predict using the multi-layer perceptron model.
